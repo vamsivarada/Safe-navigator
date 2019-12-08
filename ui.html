@@ -1,0 +1,178 @@
+<html>
+		<!-- Latest compiled and minified CSS -->
+		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
+
+		<!-- jQuery library -->
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+
+		<!-- Popper JS -->
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
+
+		<!-- Latest compiled JavaScript -->
+		<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"></script>
+    <link rel="stylesheet" href="https://atlas.microsoft.com/sdk/javascript/mapcontrol/2/atlas.min.css" type="text/css" />
+    <script src="https://atlas.microsoft.com/sdk/javascript/mapcontrol/2/atlas.min.js"></script>
+     <meta charset="utf-8" />
+    <meta http-equiv="x-ua-compatible" content="IE=Edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <meta name="description" content="This tutorial shows how to create an interactive search experience." />
+    <meta name="keywords" content="map, gis, API, SDK, services, module, tutorials, search, point of interest, POI" />
+    <meta name="author" content="Microsoft Azure Maps" />
+
+    <!-- Add references to the Azure Maps Map control JavaScript and CSS files. -->
+    <link rel="stylesheet" href="https://atlas.microsoft.com/sdk/javascript/mapcontrol/2/atlas.min.css" type="text/css" />
+    <script src="https://atlas.microsoft.com/sdk/javascript/mapcontrol/2/atlas.min.js"></script>
+
+    <!-- Add a reference to the Azure Maps Services Module JavaScript file. -->
+    <script src="https://atlas.microsoft.com/sdk/javascript/service/2/atlas-service.min.js"></script>
+<style>
+</style>
+<body>
+  <div class="container-fluid">
+    <div class="guest-container">
+      <div class="content">
+        <div class="text-center">
+          <h2 class="mb-4">
+            <a route-href="#" style="text-decoration: none">Safe Navigator</a>
+          </h2>
+        </div>
+        <div>
+         <!-- <form role="form" autocomplete="on" novalidate> -->
+			  Start Latitude:<br>
+			  <input type="text" id="slat" name="startLat"><br>
+			  Start Longitude:<br>
+			  <input type="text" id="slon" name="startLong"><br>
+			  Destination Latitude:<br>
+			  <input type="text" id="dlat" name="destLat"><br><br>
+			  Destination Longitude:<br>
+			  <input type="text" id="dlon" name="destLong"><br><br>
+			  <input class="button" name="submit" type="submit" value="submit" onclick="fetchLatLong()" />
+        <!--  </form> -->
+        
+        </div>
+      </div>
+    </div>
+    <div>
+      <div id="map" class="mt-20"></div>
+    </div>
+  </div>
+</body>
+<script type="text/javascript">
+function fetchLatLong() {
+
+    const that = this;
+
+	const startLat=document.getElementById('slat').value;
+	const startLong=document.getElementById('slon').value;
+	const destLat=document.getElementById('dlat').value;
+	const destLong=document.getElementById('dlon').value;
+
+    console.log(startLat, startLong);
+
+    let map = new atlas.Map("map", {
+      view: "Auto",
+      //Add your Azure Maps subscription client ID to the map SDK. Get an Azure Maps client ID at https://azure.com/maps
+      authOptions: {
+        authType: 'subscriptionKey',
+        subscriptionKey: 'I3_Xc6FKJFTakajfVotqIQ4bqVa53Tw9XYyuMjfF_Iw',
+      }
+    });
+
+// ensure that the map resources load fully
+    map.events.add("load", function () {
+
+      //Create a data source and add it to the map.
+      const dataSource = new atlas.source.DataSource();
+      map.sources.add(dataSource);
+
+      // /* Create pins to represent the start and end point of the route and add them to the map*/
+      var startPoint = new atlas.data.Point([startLong, startLat]);
+      var startPin = new atlas.data.Feature(startPoint, {
+        title: "Source city",
+        icon: "pin-round-blue"
+      });
+      var destinationPoint = new atlas.data.Point([destLong, destLat]);
+      var destinationPin = new atlas.data.Feature(destinationPoint, {
+        title: "Destination City",
+        icon: "pin-blue"
+      });
+
+      /* Create pins to represent the start and end point of the route and add them to the map*/
+      // var startPoint = new atlas.data.Point([13.42936, 52.50931]);
+      // var startPin = new atlas.data.Feature(startPoint, {
+      //   title: "Berlin",
+      //   icon: "pin-round-blue"
+      // });
+      // var destinationPoint = new atlas.data.Point([13.43872, 52.50274]);
+      // var destinationPin = new atlas.data.Feature(destinationPoint, {
+      //   title: "Poland",
+      //   icon: "pin-blue"
+      // });
+
+      //Add the data to the data source.
+      dataSource.add([startPin, destinationPin]);
+
+      //Add a layer for rendering the route lines and have it render under the map labels.
+      map.layers.add(new atlas.layer.LineLayer(dataSource, null, {
+        strokeColor: '#2272B9',
+        strokeWidth: 5,
+        lineJoin: 'round',
+        lineCap: 'round'
+      }), 'labels');
+
+      //Add a layer for rendering point data.
+      map.layers.add(new atlas.layer.SymbolLayer(dataSource, null, {
+        iconOptions: {
+          image: ['get', 'icon'],
+          allowOverlap: true
+        },
+        textOptions: {
+          textField: ['get', 'title'],
+          offset: [0, 1.2]
+        },
+        filter: ['any', ['==', ['geometry-type'], 'Point'], ['==', ['geometry-type'], 'MultiPoint']] //Only render Point or MultiPoints in this layer.
+      }));
+
+      /* Fit map window to the bounding box defined by the start and destination points */
+      var swLon = Math.min(
+        startPoint.coordinates[0],
+        destinationPoint.coordinates[0]
+      );
+      var swLat = Math.min(
+        startPoint.coordinates[1],
+        destinationPoint.coordinates[1]
+      );
+      var neLon = Math.max(
+        startPoint.coordinates[0],
+        destinationPoint.coordinates[0]
+      );
+      var neLat = Math.max(
+        startPoint.coordinates[1],
+        destinationPoint.coordinates[1]
+      );
+      map.setCamera({
+        bounds: [swLon, swLat, neLon, neLat],
+        padding: 35
+      });
+
+      const url = "http://192.168.4.76:8090/postjson?"+"sourceLat="+startLat+"&sourceLong="+startLong+"&destLat="+destLat+"&destLong="+destLong;
+
+      fetch(url, {}).then(function (response) {
+        return response.json();
+      }).then(function (res) {
+        console.log("Result is ", res);
+        var data = JSON.parse(res.coordinates);
+        var finaldata = []
+        for(var i=0;i<finaldata.length;i++) {
+        	finaldata.push([finaldata[i].longitude, finaldata[i].latitude]);
+        }
+       // var finaldata = data.map(function(coord){
+         // return [coord.longitude, coord.latitude];
+        //});
+        console.log("Final data is ", finaldata);
+        dataSource.add(new atlas.data.Feature(new atlas.data.LineString(finaldata)));
+      });
+    });
+  }
+</script>
+</html>
